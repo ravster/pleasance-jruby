@@ -1,3 +1,6 @@
+# Copyright 2014 Ravi Desai
+# This program is licenced under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
 require "jparallel"
 
 class Collection
