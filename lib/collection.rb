@@ -31,4 +31,18 @@ class Collection
       @data[i].atr = sum_last_period_tr / period
     end
   end
+
+  def calculate_moving_average period
+    (period+1...@data.length).each do |i|
+      @data[i].ma_20 = (i-period..i).reduce(0) do |total, j|
+        total += @data[j].close / 20
+      end
+    end
+  end
+
+  def calculate_target_close_difference
+    (0...@data.length-5).each do |i|
+      @data[i].target_close = @data[i+5].close - @data[i].close
+    end
+  end
 end

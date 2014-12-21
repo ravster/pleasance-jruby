@@ -3,7 +3,7 @@
 
 class Bar
   attr_reader :open, :high, :low, :close, :time
-  attr_accessor :tr, :atr
+  attr_accessor :tr, :atr, :ma_20, :target_close_difference
 
   def initialize open, high, low, close, time
     @open = open.to_f

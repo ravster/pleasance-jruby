@@ -24,4 +24,6 @@ end
 dataset = Collection.new bar_array
 dataset.calculate_true_range
 dataset.calculate_atr(20)
+dataset.calculate_moving_average 20
+dataset.calculate_target_close_difference
 binding.pry
