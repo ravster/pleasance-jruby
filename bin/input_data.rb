@@ -21,9 +21,17 @@ CSV.foreach(filename, headers: true) do |row|
   )
 end
 
+puts "begin indicator calculations"
+
 dataset = Collection.new bar_array
 dataset.calculate_true_range
 dataset.calculate_atr(20)
 dataset.calculate_moving_average 20
+dataset.calculate_moving_average_difference 20
 dataset.calculate_target_close_difference
+dataset.calculate_dm
+dataset.calculate_di
+dataset.calculate_average_di 20
+dataset.calculate_dmi 20
+dataset.calculate_adx 20
 binding.pry
