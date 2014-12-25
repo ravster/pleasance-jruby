@@ -120,4 +120,67 @@ class Collection
         ( highest_high - lowest_low )
     end
   end
+
+  def calculate_moving_stochastic_oscillator period
+    (period*2..@data.length-1).each do |i|
+      @data[i].moving_average_stochastic_oscillator =
+        (i-period+1..i).reduce(0) do |final, j|
+          final + @data[j].stochastic_oscillator
+        end / period
+    end
+  end
+
+  def calculate_slow_stochastic_oscillator period
+    (period*3..@data.length-1).each do |i|
+      @data[i].slow_stochastic_oscillator =
+        (i-period+1..i).reduce(0) do |final, j|
+          final +@data[j].moving_average_stochastic_oscillator
+        end / period
+    end
+  end
+
+  def calculate_rate_of_change period
+    (period..@data.length-1).each do |i|
+      @data[i].rate_of_change = @data[i].close / @data[i-period].close
+    end
+  end
+
+  def calculate_momentum period
+    (period..@data.length-1).each do |i|
+      @data[i].momentum = @data[i].close - @data[i-period].close
+    end
+  end
+
+  def calculate_disparity_5
+    # Return close/average-of-last-5-closes.
+    (5..@data.length-1).each do |i|
+      @data[i].disparity_5 = @data[i].close / (i-5-1..i).reduce(0) do |final, j|
+        final + @data[j].close
+      end / 5
+    end
+  end
+
+  def calculate_disparity_10
+    # Return close/average-of-last-10-closes.
+    (10..@data.length-1).each do |i|
+      @data[i].disparity_10 = @data[i].close / (i-10-1..i).reduce(0) do |final, j|
+        final + @data[j].close
+      end / 10
+    end
+  end
+
+  def calculate_price_oscillator
+    # (MA_5 - MA_10) / MA_5
+    (10..@data.length-1).each do |i|
+      close_ma_5 = (i-5-1..i).reduce(0) do |final, j|
+        final + @data[j].close
+      end / 5
+
+      close_ma_10 = (i-10-1..i).reduce(0) do |final, j|
+        final + @data[j].close
+      end / 10
+
+      @data[i].price_oscillator = (close_ma_5 - close_ma_10) / close_ma_5
+    end
+  end
 end

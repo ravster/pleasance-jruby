@@ -28,6 +28,16 @@ dataset.calculate_true_range
 dataset.calculate_atr(20)
 dataset.calculate_moving_average 20
 dataset.calculate_moving_average_difference 20
+dataset.calculate_stochastic_oscillator 20
+dataset.calculate_moving_stochastic_oscillator 20
+dataset.calculate_slow_stochastic_oscillator 20
+dataset.calculate_rate_of_change 20
+dataset.calculate_momentum 20
+
+dataset.calculate_disparity_5
+dataset.calculate_disparity_10
+dataset.calculate_price_oscillator
+
 dataset.calculate_target_close_difference
 dataset.calculate_dm
 dataset.calculate_di
