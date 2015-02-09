@@ -7,8 +7,33 @@ class Collection
   attr_accessor :data
   def initialize data
     @data = data
-
     @jp = Jparallel.new 6
+
+    # TODO Some of the calculations are independent of others.  They are open to being done in parallel.
+    # TODO Alternately, and possibly even better, would be to make each method parallel.  Then we wouldn't have to concern application code with ordering any more than it absolutely requires.
+
+    puts "calculating..."
+    calculate_true_range
+    calculate_atr 20
+    calculate_moving_average 20
+    calculate_moving_average_difference 20
+    calculate_stochastic_oscillator 20
+    calculate_moving_stochastic_oscillator 20
+    calculate_slow_stochastic_oscillator 20
+    calculate_rate_of_change 20
+    calculate_momentum 20
+
+    calculate_disparity_5
+    calculate_disparity_10
+    calculate_price_oscillator
+
+    calculate_target_close_difference
+    calculate_dm
+    calculate_di
+    calculate_average_di 20
+    calculate_dmi 20
+    calculate_adx 20
+    puts "calculations done."
   end
 
   def calculate_true_range
@@ -182,5 +207,9 @@ class Collection
 
       @data[i].price_oscillator = (close_ma_5 - close_ma_10) / close_ma_5
     end
+  end
+
+  def normalize_data normalizing_class
+    @normalized_data = normalizing_class.new(@data).normalize
   end
 end

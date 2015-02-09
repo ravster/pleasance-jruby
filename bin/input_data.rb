@@ -21,27 +21,9 @@ CSV.foreach(filename, headers: true) do |row|
   )
 end
 
-puts "begin indicator calculations"
-
 dataset = Collection.new bar_array
-dataset.calculate_true_range
-dataset.calculate_atr(20)
-dataset.calculate_moving_average 20
-dataset.calculate_moving_average_difference 20
-dataset.calculate_stochastic_oscillator 20
-dataset.calculate_moving_stochastic_oscillator 20
-dataset.calculate_slow_stochastic_oscillator 20
-dataset.calculate_rate_of_change 20
-dataset.calculate_momentum 20
 
-dataset.calculate_disparity_5
-dataset.calculate_disparity_10
-dataset.calculate_price_oscillator
+# TODO Pass dataset to an actor that will process it through a normalization process.  The default normalization process will be Min-Max.  We might want to try something else in the future.
+dataset.normalize_data MinmaxNormalizer
 
-dataset.calculate_target_close_difference
-dataset.calculate_dm
-dataset.calculate_di
-dataset.calculate_average_di 20
-dataset.calculate_dmi 20
-dataset.calculate_adx 20
 binding.pry
