@@ -8,6 +8,8 @@ require "csv"
 require File.dirname(__FILE__) + "/../lib/bar.rb"
 require File.dirname(__FILE__) + "/../lib/collection.rb"
 require File.dirname(__FILE__) + "/../lib/minmax_normalizer.rb"
+require "slf4j-api.jar" # -I /usr/share/java
+require "neuroph-core-2.9.jar" # -I dir/containing/jar-file
 
 filename = ARGV.first
 bar_array = []
@@ -25,6 +27,31 @@ end
 dataset = Collection.new bar_array
 
 # TODO Pass dataset to an actor that will process it through a normalization process.  The default normalization process will be Min-Max.  We might want to try something else in the future.
-a = dataset.normalize_data MinmaxNormalizer
+puts "normalizing data"
+
+normalized_data = dataset.normalize_data MinmaxNormalizer
+
+nn_dataset = org.neuroph.core.data.DataSet.new(20,1)
+
+normalized_data.each do |bar|
+  explanatory_vars = bar.explanatory_variables.map do |var|
+    java.lang.Double.new var
+  end
+  target_vars = bar.target_variables.map do |var|
+    java.lang.Double.new var
+  end
+
+  nn_dataset.add_row(
+    org.neuroph.core.data.DataSetRow.new(
+      java.util.ArrayList.new(explanatory_vars),
+      java.util.ArrayList.new(target_vars)
+    )
+  )
+end
+
+nn = org.neuroph.nnet.MultiLayerPerceptron.new(org.neuroph.util.TransferFunctionType::TANH, 20, 20, 1)
+nn.learn_in_new_thread(nn_dataset)
+sleep(60)
+nn.stop_learning
 
 binding.pry

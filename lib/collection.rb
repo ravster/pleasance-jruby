@@ -3,8 +3,14 @@
 
 require "jparallel"
 
+# A collection of {Bar} objects
 class Collection
   attr_accessor :data
+
+  # Pass in an array of {Bar} objects and calculate all the indicators for them.
+  #
+  # @param data [Array] Array of {Bar}
+  # @todo Parallelize ALL of this.  Its a lot of math, and while its quick, everyone likes things running faster.
   def initialize data
     @data = data
     @jp = Jparallel.new 6
@@ -27,7 +33,8 @@ class Collection
     calculate_disparity_10
     calculate_price_oscillator
 
-    calculate_target_close_difference
+    calculate_direction_of_change
+    calculate_magnitude_of_change
     calculate_dm
     calculate_di
     calculate_average_di 20
@@ -36,6 +43,16 @@ class Collection
     puts "calculations done."
   end
 
+  # Normalize the data according to a given Normalizer and save it in an attribute.
+  #
+  # @param normalizing_class [Class] Class that can normalize an array of {Bar}.
+  # @return [Array] Array of {Bar} with normalized indicator scores.
+  # @example normalize_data({MinmaxNormalizer})
+  def normalize_data normalizing_class
+    @normalized_data = normalizing_class.new(@data).normalize
+  end
+
+  private
   def calculate_true_range
     @data[1..-1].each_with_index do |bar, index|
       previous_close = @data[index - 1].close
@@ -71,9 +88,20 @@ class Collection
     end
   end
 
-  def calculate_target_close_difference
+  def calculate_direction_of_change
     (0...@data.length-5).each do |i|
-      @data[i].target_close = @data[i+5].close - @data[i].close
+      @data[i].direction_of_change =
+        if (@data[i+5].close - @data[i].close) > 0
+          1
+        else
+          0
+        end
+    end
+  end
+
+  def calculate_magnitude_of_change
+    (0...@data.length-5).each do |i|
+      @data[i].magnitude_of_change = (@data[i+5].close - @data[i].close).abs
     end
   end
 
@@ -207,9 +235,5 @@ class Collection
 
       @data[i].price_oscillator = (close_ma_5 - close_ma_10) / close_ma_5
     end
-  end
-
-  def normalize_data normalizing_class
-    @normalized_data = normalizing_class.new(@data).normalize
   end
 end

@@ -1,12 +1,18 @@
 # Copyright 2015 Ravi Desai
 # This program is licenced under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
+# Process a collection of {Bar} and normalize the scores of all the indicators according to the min-max formula
+# @see http://intelligencemining.blogspot.ca/2009/07/data-preprocessing-normalization.html
 class MinmaxNormalizer
   def initialize data
     @source = data[100..-50]
     @normalized_data = []
   end
 
+  # Normalize indicator scores of all {Bar}
+  #
+  # @return [Array] Array of {Bar} with normalized indicator scores.
+  # @todo Parallelize ALL of this.
   def normalize
     # 1. walk over @source and get the aggregate values
     # - max and min of all attributes of the Bar in @source
@@ -29,18 +35,15 @@ class MinmaxNormalizer
 
   private
   def normalized_score(bar, indicator)
-    # http://intelligencemining.blogspot.ca/2009/07/data-preprocessing-normalization.html
     ( (bar.send(indicator) - min_max_of_all_inputs[indicator][:min]) /
       (min_max_of_all_inputs[indicator][:max] - min_max_of_all_inputs[indicator][:min])
     ) *
       (2 - -1) +             # range of output
       -1                   # minimum output
-  rescue => e
-    binding.pry
   end
 
   def indicators
-    @source.first.class::INDICATORS
+    @source.first.class::EXPLANATORY_VARIABLES + [:magnitude_of_change]
   end
 
   def min_max_of_all_inputs
@@ -56,7 +59,5 @@ class MinmaxNormalizer
       min: min_max.first.send(indicator),
       max: min_max[1].send(indicator)
     }
-  rescue => e
-    binding.pry
   end
 end
