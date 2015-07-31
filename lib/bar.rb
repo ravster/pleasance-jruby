@@ -10,9 +10,8 @@ class Bar
     :slow_stochastic_oscillator, :rate_of_change, :momentum, :disparity_5, :disparity_10,
     :price_oscillator
 
-  EXPLANATORY_VARIABLES = [:tr, :atr, :ma_20, :ma_20_difference,
-    :plus_dm, :minus_dm, :plus_di, :minus_di, :plus_di_average, :minus_di_average,
-    :dmi, :adx, :stochastic_oscillator, :moving_average_stochastic_oscillator,
+  EXPLANATORY_VARIABLES = [:atr, :ma_20, :ma_20_difference,
+    :adx, :stochastic_oscillator, :moving_average_stochastic_oscillator,
     :slow_stochastic_oscillator, :rate_of_change, :momentum, :disparity_5, :disparity_10,
     :price_oscillator]
 
