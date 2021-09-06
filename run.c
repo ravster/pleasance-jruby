@@ -92,12 +92,37 @@ void calc_direction_of_change(int n) {
     else {
       docs[i] = 0;
     }
-    printf("%d, ", docs[i]);
+  }
+}
+
+/* When TR[-1] > ATR10[-1], and DOC[-1] is 1, I hope that H[+5]
+   (high of 5d from now) - O[0] (open today) is a nice big positive number.  If DOC[-1] is 0, we sell instead.
+   if TR does not break out of ATR10, we do not enter a position.
+
+   Let's test this.
+
+   This is a volatility breakout strategy.*/
+void t1(int n) {
+  float res[n-11];
+  for(int i = 11; i < n-5; i++) {
+    float tr = trs[i-1];
+    float atr10 = atr10s[i-1];
+    int doc = docs[i-1];
+    float a = highs[i+5] - opens[i]; // positive if profit
+    float b = lows[i+5] - opens[i]; // negative if profit
+
+    if (tr > atr10) {
+      if (doc > 0) { //buy
+	printf("1, %f\n", a);
+      } else { // sell
+	printf("-1, %f\n", b);
+      }
+    }
   }
 }
 
 int main () {
-  int num_rows = 512;
+  int num_rows = 512; // Max rows we want to consider.
   opens = (float*) malloc(num_rows * sizeof(float));
   highs = (float*) malloc(num_rows * sizeof(float));
   lows = (float*) malloc(num_rows * sizeof(float));
@@ -106,4 +131,6 @@ int main () {
   calc_true_range(num_rows);
   calc_atr_10(num_rows);
   calc_direction_of_change(num_rows);
+
+  t1(num_rows);
 }
