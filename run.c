@@ -12,6 +12,7 @@
 
 float *opens, *highs, *lows, *closes;
 float *trs, *atr10s;
+int *docs;
 
 void load_arrs(char* line, int i) {
   line = strtok(line, ",");
@@ -72,7 +73,26 @@ void calc_atr_10(int n) {
       sum += trs[i+j];
     }
     atr10s[i] = sum / 10;
-    printf("%f, ", atr10s[i]);
+  }
+}
+
+/*
+1 means yesterday's close was greater than from 5 days ago,
+else 0
+ */
+void calc_direction_of_change(int n) {
+  docs = (int*)malloc(n * sizeof(int));
+  for(int i = 5; i < n; i++) {
+    float a, b;
+    a = closes[i-5];
+    b = closes[i-1];
+    if (b > a){
+      docs[i] = 1;
+    }
+    else {
+      docs[i] = 0;
+    }
+    printf("%d, ", docs[i]);
   }
 }
 
@@ -85,4 +105,5 @@ int main () {
   num_rows = load_ohlc();
   calc_true_range(num_rows);
   calc_atr_10(num_rows);
+  calc_direction_of_change(num_rows);
 }
