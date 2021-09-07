@@ -1,4 +1,4 @@
-// gcc -o stats -I/usr/include/x86_64-linux-gnu -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include run.c -lglib-2.0 -lm
+// gcc -g -Wall -o stats run.c -lm
 
 // To run,
 // ./stats
@@ -8,7 +8,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <glib.h>
 
 float *opens, *highs, *lows, *closes;
 float *trs, *atr10s;
@@ -33,7 +32,7 @@ void load_arrs(char* line, int i) {
 }
 
 int load_ohlc() {
-  FILE* stream = fopen("sp500_1y.csv", "r");
+  FILE* stream = fopen("sp500_5y.csv", "r");
   char line[40];
   int i = 0;
   while (fgets(line, 40, stream))
@@ -103,7 +102,6 @@ void calc_direction_of_change(int n) {
 
    This is a volatility breakout strategy.*/
 void t1(int n) {
-  float res[n-11];
   for(int i = 11; i < n-5; i++) {
     float tr = trs[i-1];
     float atr10 = atr10s[i-1];
@@ -122,7 +120,7 @@ void t1(int n) {
 }
 
 int main () {
-  int num_rows = 512; // Max rows we want to consider.
+  int num_rows = 1300; // Max rows we want to consider.
   opens = (float*) malloc(num_rows * sizeof(float));
   highs = (float*) malloc(num_rows * sizeof(float));
   lows = (float*) malloc(num_rows * sizeof(float));
