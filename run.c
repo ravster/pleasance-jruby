@@ -123,6 +123,10 @@ void calc_direction_of_change(int n) {
   }
 }
 
+float avg(int i) {
+  return (highs[i] + lows[i]) / 2;
+}
+
 /* When TR[-1] > ATR10[-1], and DOC[-1] is 1, I hope that H[+5]
    (high of 5d from now) - O[0] (open today) is a nice big positive number.  If DOC[-1] is 0, we sell instead.
    if TR does not break out of ATR10, we do not enter a position.
@@ -131,13 +135,14 @@ void calc_direction_of_change(int n) {
 
    This is a volatility breakout strategy.*/
 void t1(int n) {
-  FILE* f = fopen("a.csv", "w");
+  // THIS LOSES MONEY
+  FILE* f = fopen("t1.csv", "w");
   for(int i = 11; i < n-5; i++) {
     float tr = trs[i-1];
     float atr10 = atr10s[i-1];
     int doc = docs[i-1];
-    float a = highs[i+5] - opens[i]; // positive if profit
-    float b = lows[i+5] - opens[i]; // negative if profit
+    float a = avg(i+5) - opens[i]; // positive if profit
+    float b = avg(i+5) - opens[i]; // negative if profit
 
     if (tr > atr10) {
       if (doc > 0) { //buy
@@ -152,32 +157,27 @@ void t1(int n) {
 
 /* How often does close-open go in the same direction for consecutive days, and how long does that trend usually last? */
 void t2(int n) {
-  int a = 0;
-  FILE* up = fopen("up.csv", "w");
-  FILE* down = fopen("down.csv", "w");
+  int up = 0;
+  int down = 0;
+  FILE* f = fopen("t2.csv", "w");
+  fprintf(f, "date, consecutive up days, consecutive down days\n");
 
-  for(int i = 1; i < n; i++) {
-    if (closes[i] > opens[i]) {
-      if (a > -1) {
-	a++;
-      } else {
-	fprintf(up, "%d\n", a);
-	a = 1;
+  for(int i = 2; i < n; i++) {
+    if (closes[i] > closes[i-1]) {
+      up++;
+      if (down != 0) {
+	fprintf(f, "%s, 0, %d\n", dates[i], down);
+	down = 0;
       }
-    } else if (closes[i] < opens[i]) {
-      if (a < 1) {
-	a--;
-      } else {
-	fprintf(down, "%d\n", a);
-	a = -1;
+    } else if (closes[i] < closes[i-1]) {
+      down++;
+      if (up != 0) {
+	fprintf(f, "%s, %d, 0\n", dates[i], up);
+	up = 0;
       }
-    } else {
-      a = 0;
     }
   }
-  fclose(up);
-  fclose(down);
-  printf("done");
+  fclose(f);
 }
 
 /* When TR[-1] > ATR10[-1] && TR[-2] < ATR10[-2], and DOC[-1] is 1, I hope that H[+5]
@@ -207,9 +207,6 @@ void t3(int n) {
   fclose(f);
 }
 
-float avg(int i) {
-  return (highs[i] + lows[i]) / 2;
-}
 /* I'm interested in the spikes.  This is when the tick-chart shows a long wick either
    above or below the candle.  I want to know the stats around this.
    It appears we should just buy everytime a spike happens, when the spike is greater
@@ -253,10 +250,10 @@ int main () {
   calc_direction_of_change(num_rows);
 
   /* printf("start\n"); */
-  /* t1(num_rows); */
+  //t1(num_rows);
   /* printf("t1 done\n"); */
-  /* t2(num_rows); */
+  t2(num_rows);
   /* printf("t2 done\n"); */
   // t3(num_rows);
-  t4(num_rows);
+  // t4(num_rows);
 }
