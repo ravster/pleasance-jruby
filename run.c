@@ -35,6 +35,24 @@ void load_arrs(char* line, int i) {
   dates[i] = strdup(line);
 }
 
+void reverse_float_array(float* arr, int n) {
+  float temp;
+   for(int i=0; i<n/2; i++)
+    {
+        temp = arr[i];
+        arr[i] = arr[n-i-1];
+        arr[n-1-i] = temp;
+    }
+}
+void reverse_string_array(char** arr, int n) {
+  char* temp;
+   for(int i=0; i<n/2; i++)
+    {
+        temp = arr[i];
+        arr[i] = arr[n-i-1];
+        arr[n-1-i] = temp;
+    }
+}
 int load_ohlc() {
   FILE* stream = fopen("sp500_5y.csv", "r");
   char line[50];
@@ -47,6 +65,14 @@ int load_ohlc() {
 	i++;
     }
   fclose(stream);
+
+  // We want the newest entries later in the datasets.
+  reverse_float_array(opens, i);
+  reverse_float_array(closes, i);
+  reverse_float_array(highs, i);
+  reverse_float_array(lows, i);
+  reverse_string_array(dates, i);
+
   return i;
 }
 
@@ -172,11 +198,43 @@ void t3(int n) {
 
     if ((trs[i-2] < atr10s[i-2]) && (tr > atr10)) {
       if (doc > 0) { //buy
-	fprintf(f, "%s, 1, %f\n", dates[i], a);
+	fprintf(f, "%s, 1, %f, %f, %f\n", dates[i], a, tr, atr10);
       } else { // sell
-	fprintf(f, "%s, -1, %f\n", dates[i], b);
+	fprintf(f, "%s, -1, %f, %f, %f\n", dates[i], b, tr, atr10);
       }
     }
+  }
+  fclose(f);
+}
+
+float avg(int i) {
+  return (highs[i] + lows[i]) / 2;
+}
+/* I'm interested in the spikes.  This is when the tick-chart shows a long wick either
+   above or below the candle.  I want to know the stats around this.
+   It appears we should just buy everytime a spike happens, when the spike is greater
+   than the median ATR-10.
+ */
+void t4(int n) {
+  FILE* f = fopen("candle_wicks.csv", "w");
+  fprintf(f, "Date, 1, h/atr10, l/atr10, atr10, h+2, l+2\n");
+  for(int i = 11; i < n; i++) {
+    float atr10 = atr10s[i-1];
+    float h = highs[i-1] - fmax(opens[i-1], closes[i-1]);
+    float l = fmin(opens[i-1], closes[i-1]) - lows[i-1];
+    float h_2 = 0;
+    float l_2 = 0;
+
+    // Magic numbers are the median
+    if (h/atr10 > 0.11) { // spike on top
+      h_2 = avg(i+2) - opens[i]; // positive is good
+    }
+    if ((l/atr10 > 0.14) && h_2 == 0) { // spike on bottom
+      // buy
+      l_2 = avg(i+2) - opens[i]; // positive is good
+    }
+
+    fprintf(f, "%s, 1, %f, %f, %f, %f, %f\n", dates[i], h/atr10, l/atr10, atr10, h_2, l_2);
   }
   fclose(f);
 }
@@ -199,5 +257,6 @@ int main () {
   /* printf("t1 done\n"); */
   /* t2(num_rows); */
   /* printf("t2 done\n"); */
-  t3(num_rows);
+  // t3(num_rows);
+  t4(num_rows);
 }
