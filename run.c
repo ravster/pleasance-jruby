@@ -168,12 +168,31 @@ void t2(int n) {
       if (down != 0) {
 	fprintf(f, "%s, 0, %d\n", dates[i], down);
 	down = 0;
+      } else {
+	// been going up consecutively
+	if (up > 3) {
+	  // printf("%f\n", avg(i+1) - opens[i]);
+	  /* If it's gone up consecutively for 3 days (happens only 10% of the time), and you
+	     buy on the open of day 4, then sell on day-5,
+	     num-wins/num-loss = 70/27, and
+	     avgwin = 14points,
+	     avgloss = 8points */
+	}
       }
     } else if (closes[i] < closes[i-1]) {
       down++;
       if (up != 0) {
 	fprintf(f, "%s, %d, 0\n", dates[i], up);
 	up = 0;
+      } else {
+	if (down > 2) {
+	  printf("%f\n", opens[i] - closes[i+1]);
+	  /* If you sell after 3 consecutive down days (<10% chance of this),
+	     count win = 58
+	     countloss = 31
+	     avg-win = 39.42
+	     avg-loss = -25.43 */
+	}
       }
     }
   }
