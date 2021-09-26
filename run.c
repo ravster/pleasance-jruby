@@ -10,12 +10,15 @@
 #include <math.h>
 
 float *opens, *highs, *lows, *closes;
-float *trs, *atr10s;
+float *trs, *atr10s, *hh100s, *ll100s;
 int *docs;
 char** dates;
 
 void load_arrs(char* line, int i) {
   line = strtok(line, ",");
+  dates[i] = strdup(line);
+
+  line = strtok(NULL, ",");
   float f = atof(line);
   opens[i] = f;
 
@@ -30,9 +33,6 @@ void load_arrs(char* line, int i) {
   line = strtok(NULL, ",");
   f = atof(line);
   closes[i] = f;
-
-  line = strtok(NULL, "\n");
-  dates[i] = strdup(line);
 }
 
 void reverse_float_array(float* arr, int n) {
@@ -54,10 +54,10 @@ void reverse_string_array(char** arr, int n) {
     }
 }
 int load_ohlc() {
-  FILE* stream = fopen("sp500_5y.csv", "r");
-  char line[50];
+  FILE* stream = fopen("DBA.csv", "r");
+  char line[70];
   int i = 0;
-  while (fgets(line, 50, stream))
+  while (fgets(line, 70, stream))
     {
         char* tmp = strdup(line);
 	load_arrs(tmp, i);
@@ -67,11 +67,11 @@ int load_ohlc() {
   fclose(stream);
 
   // We want the newest entries later in the datasets.
-  reverse_float_array(opens, i);
-  reverse_float_array(closes, i);
-  reverse_float_array(highs, i);
-  reverse_float_array(lows, i);
-  reverse_string_array(dates, i);
+  /* reverse_float_array(opens, i); */
+  /* reverse_float_array(closes, i); */
+  /* reverse_float_array(highs, i); */
+  /* reverse_float_array(lows, i); */
+  /* reverse_string_array(dates, i); */
 
   return i;
 }
@@ -123,6 +123,22 @@ void calc_direction_of_change(int n) {
   }
 }
 
+// Record highest high in the last 100 ticks.
+void calc_hh100(int n) {
+  hh100s = (float*)calloc(n, sizeof(float));
+  ll100s = (float*)calloc(n, sizeof(float));
+  for(int i = 100; i < n; i++) {
+    float max = -1;
+    float min = 10000;
+    for(int j = i-100; j< i; j++) {
+      max = fmax(max, highs[j]);
+      min = fmin(min, lows[j]);
+    }
+    hh100s[i] = max;
+    ll100s[i] = min;
+  }
+}
+
 float avg(int i) {
   return (highs[i] + lows[i]) / 2;
 }
@@ -165,34 +181,31 @@ void t2(int n) {
   for(int i = 2; i < n; i++) {
     if (closes[i] > closes[i-1]) {
       up++;
+      if (up > 3) {
+	// printf("%f\n", avg(i+1) - opens[i]);
+	/* If it's gone up consecutively for 3 days (~10% of the time), and you
+	   buy on the open of day 4, then sell on day-5,
+	   num-wins/num-loss = 70/27, and
+	   avgwin = 14points,
+	   avgloss = 8points */
+      }
       if (down != 0) {
 	fprintf(f, "%s, 0, %d\n", dates[i], down);
 	down = 0;
-      } else {
-	// been going up consecutively
-	if (up > 3) {
-	  // printf("%f\n", avg(i+1) - opens[i]);
-	  /* If it's gone up consecutively for 3 days (happens only 10% of the time), and you
-	     buy on the open of day 4, then sell on day-5,
-	     num-wins/num-loss = 70/27, and
-	     avgwin = 14points,
-	     avgloss = 8points */
-	}
       }
     } else if (closes[i] < closes[i-1]) {
       down++;
+      if (down > 2) {
+	printf("%f\n", opens[i] - closes[i+1]);
+	/* If you sell after 3 consecutive down days (~10% chance of this),
+	   count win = 58
+	   countloss = 31
+	   avg-win = 39.42
+	   avg-loss = -25.43 */
+      }
       if (up != 0) {
 	fprintf(f, "%s, %d, 0\n", dates[i], up);
 	up = 0;
-      } else {
-	if (down > 2) {
-	  printf("%f\n", opens[i] - closes[i+1]);
-	  /* If you sell after 3 consecutive down days (<10% chance of this),
-	     count win = 58
-	     countloss = 31
-	     avg-win = 39.42
-	     avg-loss = -25.43 */
-	}
       }
     }
   }
@@ -255,6 +268,33 @@ void t4(int n) {
   fclose(f);
 }
 
+/* Stats on the HH100s */
+void t5(int n) {
+  FILE* f = fopen("hh100s.csv", "w");
+  FILE* g = fopen("ll100s.csv", "w");
+  fprintf(f, "Date, high, hh100[-1], [+1], [+3], [+5], [+10]\n");
+  fprintf(g, "Date, low, ll100[-1], [+1], [+3], [+5], [+10]\n");
+  for(int i = 101; i < n; i++) {
+    if (highs[i] > hh100s[i-1]) {
+      fprintf(f, "%s, %f, %f, %f, %f, %f, %f\n", dates[i], highs[i], hh100s[i-1],
+	      highs[i+1] / closes[i],
+	      highs[i+3] / closes[i],
+	      highs[i+5] / closes[i],
+	      highs[i+10] / closes[i]
+	      );
+    } else if (lows[i] < ll100s[i-1]) {
+      fprintf(g, "%s, %f, %f, %f, %f, %f, %f\n", dates[i], lows[i], ll100s[i-1],
+	      lows[i+1] / closes[i],
+	      lows[i+3] / closes[i],
+	      lows[i+5] / closes[i],
+	      lows[i+10] / closes[i]
+	      );
+    }
+  }
+  fclose(f);
+  fclose(g);
+}
+
 int main () {
   int num_rows = 5000; // Max rows we want to consider.
   opens = (float*) malloc(num_rows * sizeof(float));
@@ -267,12 +307,14 @@ int main () {
   calc_true_range(num_rows);
   calc_atr_10(num_rows);
   calc_direction_of_change(num_rows);
+  calc_hh100(num_rows);
 
   /* printf("start\n"); */
   //t1(num_rows);
   /* printf("t1 done\n"); */
-  t2(num_rows);
+  // t2(num_rows);
   /* printf("t2 done\n"); */
   // t3(num_rows);
   // t4(num_rows);
+  t5(num_rows);
 }
