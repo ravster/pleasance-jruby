@@ -11,9 +11,8 @@ import pandas_datareader as pdr
 #
 # This will pull data on DBA from Yahoo Finance, from 1-jan-2021 onward.
 
-# df = pdr.get_data_yahoo(sys.argv[1], sys.argv[2])
+#df = pdr.get_data_yahoo(sys.argv[1], sys.argv[2])
 df = pd.read_csv("DBA.csv", parse_dates=True, index_col='Date')
-print(df, 'orig df')
 
 df["SMA50"] = df["Close"].rolling(50).mean()
 df["sma14"] = df["Close"].rolling(14).mean()
@@ -34,7 +33,6 @@ def t1(x):
     diff = x.targetclose - x.open
     res = [None, None]
     if x.prevatr10 > median_atr:
-        count += 1
         if x.prevclose - x.prevopen:
             res = [1, diff]
         else:
@@ -54,38 +52,40 @@ df3['close'] = df['Close']
 df3['targetclose'] = df['Close'].shift(-5)
 t1 = df3.apply(t1, axis=1)
 t1.to_csv("t1.csv")
-print(count, total)
-
-exit(0)
 print("DONE T1")
 
 df["hh100"] = df['High'].rolling(100).max()
 df["ll100"] = df['Low'].rolling(100).min()
 
-print("T2 - Breakout from highest high or lowest low of last 100 days")
-upcount = downcount = 0
-uptot = downtot = 0
-for i in range(101, len(df) - 5):
-    prev2 = df.loc[i-2]
-    previous = df.loc[i-1]
-    row = df.loc[i]
-    target = df.loc[i+5]
-    diff = target.Close - row.Open
-    if previous.High > prev2.hh100:
-        upcount+=1
-        if diff > 0:
-            uptot += diff
-        else:
-            uptot -= diff
-    elif previous.Low < prev2.ll100:
-        downcount += 1
-        if diff < 0:
-            downtot += -diff # negative of negative
-        else:
-            downtot -= diff
+plt.plot(df.index, df['Close'], linestyle='solid')
+plt.plot(df.index, df['hh100'], color='blue')
+plt.plot(df.index, df['ll100'], color='red')
+plt.show()
 
-print(upcount, uptot, downcount, downtot)
-print("median close", df['Close'].median())
+print("T2 - Breakout from highest high or lowest low of last 100 days")
+def t2(x):
+    diff = x.tclose - x.open
+    res = [0, 0]
+    if x.prevh > x.prev2hh:
+        res = [1, diff]
+    elif x.prevl < x.prev2ll:
+        res = [-1, -diff]
+    return pd.Series({
+        "b/s": res[0],
+        "p/l": res[1],
+        "total": res[0] * res[1]
+    })
+
+df4 = pd.DataFrame({})
+df4['tclose'] = df['Close'].shift(-5)
+df4['open'] = df['Open']
+df4['prev2hh'] = df['hh100'].shift(2)
+df4['prevh'] = df['High'].shift(1)
+df4['prev2ll'] = df['ll100'].shift(2)
+df4['prevl'] = df['Low'].shift(1)
+t1 = df4.apply(t2, axis=1)
+t1.to_csv("t2.csv")
+print("median open", df4['open'].median())
 #pdb.set_trace()
 
 print("DONE T2")
