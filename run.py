@@ -1,9 +1,16 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import pdb
+import sys
 
-df = pd.read_csv("DBA.csv")
-#df = pd.read_csv("XQQ.TO.csv")
+# USAGE:
+# python3 run.py DBA.csv
+#
+# The CSV file must be formatted the way you get it from Yahoo Finance, or this script
+# will break.
+# date, open, high, low, close, adj.close, volume
+
+df = pd.read_csv(sys.argv[1])
 
 df["SMA50"] = df["Close"].rolling(50).mean()
 
