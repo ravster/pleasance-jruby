@@ -5,6 +5,7 @@ import sys
 import numpy as np
 import datetime as dt
 import pandas_datareader as pdr
+import random
 
 # USAGE:
 # python3 run.py DBA 2021-1-1
@@ -12,7 +13,23 @@ import pandas_datareader as pdr
 # This will pull data on DBA from Yahoo Finance, from 1-jan-2021 onward.
 
 #df = pdr.get_data_yahoo(sys.argv[1], sys.argv[2])
-df = pd.read_csv("DBA.csv", parse_dates=True, index_col='Date')
+df = pd.read_csv(sys.argv[1], parse_dates=True, index_col='Date')
+
+print("Basic dollar-cost-averaging")
+leftover = tot_bought = tot_spent = 0
+for _, row in df.iterrows():
+    if 10 != random.randint(1, 10):
+        continue
+    close = row['Close']
+    spendable = 50 + leftover
+    bought = int(spendable / close)
+    tot_bought += bought
+    spent = bought * close
+    tot_spent += spent
+    leftover = spendable - spent
+
+print(leftover, tot_bought, tot_spent, " average price bought=", tot_spent / tot_bought, " median price of security=", df['Close'].median())
+print("DONE dollar-cost-averaging")
 
 df["SMA50"] = df["Close"].rolling(50).mean()
 df["sma14"] = df["Close"].rolling(14).mean()
