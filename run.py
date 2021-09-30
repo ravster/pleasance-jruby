@@ -41,71 +41,79 @@ ranges = pd.concat([high_low, high_close, low_close], axis=1)
 df['tr'] = np.max(ranges, axis=1)
 
 df['atr10'] = df['tr'].rolling(10).mean()
-median_atr = df['atr10'].median()
-print(median_atr)
 
-print("Begin T1 - If we cross median ATR10, then do we make money when we go in the direction of the breakout?")
-# Pandas will apply this function on every row.  It's set up to be embarassingly parallel.
-def t1(x):
-    diff = x.targetclose - x.open
-    res = [None, None]
-    if x.prevatr10 > median_atr:
-        if x.prevclose - x.prevopen:
-            res = [1, diff]
-        else:
-            res = [-1, -diff]
-    return pd.Series({"buy/sell": res[0], "p/l": res[1]})
+# This strategy ALWAYS fails.  Tested on DBA, XQQ, IBM, etc. on 5y period.
+def basic_atr10_median_breakout():
+     median_atr = df['atr10'].median()
+     print(median_atr)
 
-# We set up a dataframe that has all the information for a calculation all in one row.
-# This is what helps the function above run on each row independently, which allows for
-# Pandas to run that code on this data in a SIMD fashion over multiple CPU cores at the
-# same time.  Independent computation rocks!
-df3 = pd.DataFrame({})
-df3['prevatr10'] = df['atr10'].shift(1)
-df3['prevopen'] = df['Open'].shift(1)
-df3['prevclose'] = df['Close'].shift(1)
-df3['open'] = df['Open']
-df3['close'] = df['Close']
-df3['targetclose'] = df['Close'].shift(-5)
-t1 = df3.apply(t1, axis=1)
-t1.to_csv("t1.csv")
-print("DONE T1")
+     print("Begin T1 - If we cross median ATR10, then do we make money when we go in the direction of the breakout?")
+     # Pandas will apply this function on every row.  It's set up to be embarassingly parallel.
+     def t1(x):
+         diff = x.targetclose - x.open
+         res = [None, None, None]
+         if x.prevatr10 > median_atr:
+             if x.prevclose - x.prevopen:
+                 res = [1, diff, diff]
+             else:
+                 res = [-1, -diff, diff]
+         return pd.Series({"buy/sell": res[0], "p/l": res[1], 'profit': res[2]})
+
+     # We set up a dataframe that has all the information for a calculation all in one row.
+     # This is what helps the function above run on each row independently, which allows for
+     # Pandas to run that code on this data in a SIMD fashion over multiple CPU cores at the
+     # same time.  Independent computation rocks!
+     df3 = pd.DataFrame({})
+     df3['prevatr10'] = df['atr10'].shift(1)
+     df3['prevopen'] = df['Open'].shift(1)
+     df3['prevclose'] = df['Close'].shift(1)
+     df3['open'] = df['Open']
+     df3['close'] = df['Close']
+     df3['targetclose'] = df['Close'].shift(-5)
+     t1 = df3.apply(t1, axis=1)
+     t1.to_csv("t1.csv")
+     print("DONE T1")
 
 df["hh100"] = df['High'].rolling(100).max()
 df["ll100"] = df['Low'].rolling(100).min()
 
-plt.plot(df.index, df['Close'], linestyle='solid')
-plt.plot(df.index, df['hh100'], color='blue')
-plt.plot(df.index, df['ll100'], color='red')
-plt.show()
+# plt.plot(df.index, df['Close'], linestyle='solid')
+# plt.plot(df.index, df['hh100'], color='blue')
+# plt.plot(df.index, df['ll100'], color='red')
+# plt.plot(df.index, df['sma14'], color='pink')
+# plt.show()
 
-print("T2 - Breakout from highest high or lowest low of last 100 days")
-def t2(x):
-    diff = x.tclose - x.open
-    res = [0, 0]
-    if x.prevh > x.prev2hh:
-        res = [1, diff]
-    elif x.prevl < x.prev2ll:
-        res = [-1, -diff]
-    return pd.Series({
-        "b/s": res[0],
-        "p/l": res[1],
-        "total": res[0] * res[1]
-    })
+def breakout_100d_hh_or_ll():
+    # This is a pretty good strategy actually, for trenders like DBA or XQQ.
+    print("T2 - Breakout from highest high or lowest low of last 100 days")
+    def t2(x):
+        diff = x.tclose - x.open
+        res = [0, 0]
+        if x.prevh > x.prev2hh:
+            res = [1, diff]
+        elif x.prevl < x.prev2ll:
+            res = [-1, -diff]
+        return pd.Series({
+            "b/s": res[0],
+            "p/l": res[1],
+            "total": res[0] * res[1]
+        })
 
-df4 = pd.DataFrame({})
-df4['tclose'] = df['Close'].shift(-5)
-df4['open'] = df['Open']
-df4['prev2hh'] = df['hh100'].shift(2)
-df4['prevh'] = df['High'].shift(1)
-df4['prev2ll'] = df['ll100'].shift(2)
-df4['prevl'] = df['Low'].shift(1)
-t1 = df4.apply(t2, axis=1)
-t1.to_csv("t2.csv")
-print("median open", df4['open'].median())
-#pdb.set_trace()
+    df4 = pd.DataFrame({})
+    df4['tclose'] = df['Close'].shift(-5)
+    df4['open'] = df['Open']
+    df4['prev2hh'] = df['hh100'].shift(2)
+    df4['prevh'] = df['High'].shift(1)
+    df4['prev2ll'] = df['ll100'].shift(2)
+    df4['prevl'] = df['Low'].shift(1)
+    t1 = df4.apply(t2, axis=1)
+    t1.to_csv("t2.csv")
+    print("median open", df4['open'].median())
+    #pdb.set_trace()
 
-print("DONE T2")
+    print("DONE T2")
+
+breakout_100d_hh_or_ll()
 
 
 # plt.scatter(df['tr'], df['atr10'])
