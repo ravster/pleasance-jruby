@@ -34,9 +34,7 @@ print("DONE import of data.  We have", count, 'rows')
 
 print("Basic dollar-cost-averaging")
 leftover = tot_bought = tot_spent = 0
-for i in range(0, count-1):
-    if 10 != random.randint(1, 10):
-        continue
+for i in range(0, count-1, 10):
     close = closes[i]
     spendable = 50 + leftover
     bought = int(spendable / close)
@@ -50,7 +48,6 @@ def median(data):
     index = len(data) // 2
     if len(data) % 2 != 0:
         return data[index]
-
     return (data[index -1] + data[index]) / 2
 
 median_close = median(closes)
